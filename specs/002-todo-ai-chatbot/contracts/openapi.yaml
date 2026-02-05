@@ -1,0 +1,56 @@
+openapi: 3.0.0
+info:
+  title: Todo AI Chatbot API
+  version: 1.0.0
+paths:
+  /api/chat:
+    post:
+      summary: Send a message to the AI chatbot
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  example: "Add a task to buy milk"
+                conversation_id:
+                  type: string
+                  format: uuid
+                  description: "Optional: Continue existing conversation"
+      responses:
+        '200':
+          description: AI response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                    description: "The AI's natural language response"
+                  conversation_id:
+                    type: string
+                    format: uuid
+                  tool_calls:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tool:
+                          type: string
+                        args:
+                          type: object
+        '401':
+          description: Unauthorized
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

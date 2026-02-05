@@ -1,0 +1,49 @@
+# Default values for todo-app.
+
+backend:
+  image:
+    repository: todo-backend
+    tag: "local"
+    pullPolicy: Never
+  replicas: 1
+  service:
+    type: NodePort
+    port: 8000
+    nodePort: 30001 # Exposing Backend externally so browser can reach it
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+frontend:
+  image:
+    repository: todo-frontend
+    tag: "local"
+    pullPolicy: Never
+  replicas: 1
+  service:
+    type: NodePort
+    port: 3000
+    nodePort: 30000
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Secrets (to be overridden or set via --set)
+secrets:
+  databaseUrl: ""
+  secretKey: ""
+  algorithm: "HS256"
+  accessTokenExpireMinutes: "30"
+  geminiApiKey: ""
+  nextPublicGeminiApiKey: ""
+  betterAuthSecret: ""
+  betterAuthUrl: "http://localhost:30000"
+  backendCorsOrigins: '["http://localhost:30000", "http://localhost:30001"]' # Allow Localhost Access
