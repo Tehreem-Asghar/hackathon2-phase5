@@ -41,9 +41,7 @@ jobs:
     # Build and Push Backend
     - name: Build Backend
       run: |-
-        docker build 
-          --tag "us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_BACKEND:$GITHUB_SHA" 
-          ./backend
+        docker build -t "us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_BACKEND:$GITHUB_SHA" ./backend
     - name: Publish Backend
       run: |-
         docker push "us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_BACKEND:$GITHUB_SHA"
@@ -51,10 +49,7 @@ jobs:
     # Build and Push Frontend
     - name: Build Frontend
       run: |-
-        docker build 
-          --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000 
-          --tag "us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_FRONTEND:$GITHUB_SHA" 
-          ./frontend
+        docker build --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000 -t "us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_FRONTEND:$GITHUB_SHA" ./frontend
     - name: Publish Frontend
       run: |-
         docker push "us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_FRONTEND:$GITHUB_SHA"
