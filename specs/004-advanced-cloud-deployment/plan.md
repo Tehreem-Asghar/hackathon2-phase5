@@ -59,25 +59,25 @@ services/
 
 ## Implementation Strategy
 
-### 1. Dapr-ization of Existing Services
-- Refactor `backend` to use Dapr State Store for conversation history and task state.
-- Refactor `backend` to publish events to `kafka-pubsub` component.
-- Inject Dapr sidecars into existing Kubernetes deployments.
+### Stage 1: Direct Feature Implementation (Safety First)
+*Goal: Ensure a fully functional app before architectural complexity.*
+- **Intermediate Features**: Implement `priority`, `tags`, `search`, `filter`, and `sort` directly in the existing Backend and Frontend.
+- **Advanced Features**: Implement `due_date`, `reminders` (using simple background tasks/polling for now), and `recurring_tasks` (logic triggered on completion).
+- **Validation**: Verify all features work in the standard dev environment.
 
-### 2. Event-Driven Features
-- **Audit Log**: Create a simple consumer service that listens to all `task-events` and saves them to a log.
-- **Recurring Tasks**: Create a service that listens for `task-completed` where `recurrence != None`.
-- **Reminders**: Use Dapr Jobs API to schedule a callback to the `notification` service.
+### Stage 2: Containerization & Local Kubernetes
+- **Dockerization**: Create Dockerfiles for Frontend and Backend. Use Docker Compose for local testing.
+- **Local K8s**: Deploy to Docker Desktop Kubernetes. Create Deployment and Service manifests.
+- **Secrets**: Use standard Kubernetes Secrets for database strings.
 
-### 3. Local Development (Minikube)
-- Install Dapr CLI and initialize on Kubernetes: `dapr init -k`.
-- Deploy Redpanda locally using Helm.
-- Configure Dapr components (`pubsub.yaml`, `statestore.yaml`, `secrets.yaml`).
+### Stage 3: Cloud Deployment (GKE)
+- **Provisioning**: Setup GKE cluster.
+- **CI/CD**: Configure GitHub Actions to deploy the "Stage 2" version to GKE.
 
-### 4. Cloud Deployment (GKE/AKS)
-- Provision GKE cluster.
-- Setup Redpanda Cloud or Strimzi on GKE.
-- Use GitHub Actions to build images, push to Artifact Registry, and apply Helm charts.
+### Stage 4: Event-Driven Refactor (Kafka & Dapr)
+- **Dapr Integration**: Abstract state store and secrets.
+- **Kafka Integration**: Introduce Redpanda. Refactor Audit Log, Recurring Tasks, and Notifications to use Dapr Pub/Sub and Jobs API.
+- **Final Validation**: Transition from direct logic to the event-driven architecture.
 
 ## Complexity Tracking
 

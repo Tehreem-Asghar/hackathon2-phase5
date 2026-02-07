@@ -1,5 +1,8 @@
 # Stage 1: Install dependencies and build the application
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
+
+# Install system dependencies for native modules
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -18,12 +21,12 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
 # Stage 2: Serve the application with a minimal image
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 
 WORKDIR /app
 
 # Set NODE_ENV to production
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # Copy necessary files from the builder stage
 COPY --from=builder /app/.next ./.next

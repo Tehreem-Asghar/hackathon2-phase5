@@ -39,16 +39,18 @@ app.include_router(chat, prefix="/api/chat", tags=["chat"])
 @app.on_event("startup")
 async def on_startup():
     async with engine.begin() as conn:
-        # Create tables if they don't exist
-        await conn.run_sync(User.metadata.create_all)
+        # Create tables
         await conn.run_sync(Todo.metadata.create_all)
-        await conn.run_sync(Conversation.metadata.create_all)
-        await conn.run_sync(Message.metadata.create_all)
         
-        # Manually add 'name' column if it's missing (since create_all doesn't handle migrations)
+        # Simple migrations
         try:
             await conn.execute(text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS name VARCHAR'))
-            await conn.commit()
+            await conn.execute(text("ALTER TABLE todo ADD COLUMN IF NOT EXISTS priority VARCHAR DEFAULT 'medium'"))
+            await conn.execute(text("ALTER TABLE todo ADD COLUMN IF NOT EXISTS due_date TIMESTAMP WITHOUT TIME ZONE"))
+            await conn.execute(text("ALTER TABLE todo ADD COLUMN IF NOT EXISTS tags JSONB DEFAULT '[]'"))
+            await conn.execute(text("ALTER TABLE todo ALTER COLUMN tags TYPE JSONB USING tags::jsonb"))
+            await conn.execute(text("ALTER TABLE todo ADD COLUMN IF NOT EXISTS recurrence VARCHAR DEFAULT 'none'"))
+            await conn.execute(text("ALTER TABLE todo ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES todo(id)"))
         except Exception as e:
             print(f"Migration note: {e}")
 

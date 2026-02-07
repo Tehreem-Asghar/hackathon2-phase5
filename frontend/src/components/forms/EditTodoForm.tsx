@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { Todo } from '@/components/todo/TodoItem';
+import { Todo, TodoPriority, TodoRecurrence } from '@/types/todo';
 
 interface EditTodoFormProps {
   todo: Todo;
@@ -11,13 +11,36 @@ interface EditTodoFormProps {
 export const EditTodoForm: React.FC<EditTodoFormProps> = ({ todo, onSuccess, onCancel }) => {
   const [title, setTitle] = useState(todo.title);
   const [description, setDescription] = useState(todo.description || '');
+  const [priority, setPriority] = useState<TodoPriority>(todo.priority);
+  const [recurrence, setRecurrence] = useState<TodoRecurrence>(todo.recurrence);
+  const [dueDate, setDueDate] = useState(todo.due_date ? todo.due_date.split('T')[0] : '');
+  const [tagInput, setTagInput] = useState('');
+  const [tags, setTags] = useState<string[]>(todo.tags || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     setTitle(todo.title);
     setDescription(todo.description || '');
+    setPriority(todo.priority);
+    setRecurrence(todo.recurrence);
+    setDueDate(todo.due_date ? todo.due_date.split('T')[0] : '');
+    setTags(todo.tags || []);
   }, [todo]);
+
+  const handleAddTag = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault();
+      if (!tags.includes(tagInput.trim())) {
+        setTags([...tags, tagInput.trim()]);
+      }
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(t => t !== tagToRemove));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +52,15 @@ export const EditTodoForm: React.FC<EditTodoFormProps> = ({ todo, onSuccess, onC
     try {
       const res = await api.fetch(`/api/todos/${todo.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ title, description, is_completed: todo.is_completed }),
+        body: JSON.stringify({ 
+          title, 
+          description, 
+          is_completed: todo.is_completed,
+          priority,
+          recurrence,
+          due_date: dueDate ? new Date(dueDate).toISOString() : null,
+          tags
+        }),
       });
 
       if (res.ok) {
@@ -47,7 +78,7 @@ export const EditTodoForm: React.FC<EditTodoFormProps> = ({ todo, onSuccess, onC
 
   return (
     <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md overflow-y-auto h-full w-full flex items-center justify-center z-50 animate-fade-in">
-      <div className="glass-panel p-8 rounded-2xl shadow-xl border border-slate-700/50 relative w-full max-w-lg animate-scale-in">
+      <div className="glass-panel p-8 rounded-2xl shadow-xl border border-slate-700/50 relative w-full max-w-lg animate-scale-in max-h-[90vh] overflow-y-auto">
         
         <div className="flex justify-between items-center mb-6 relative z-10">
           <h3 className="text-xl font-bold text-white">Edit Task</h3>
@@ -67,6 +98,66 @@ export const EditTodoForm: React.FC<EditTodoFormProps> = ({ todo, onSuccess, onC
               required
             />
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5 relative z-10">
+            <div>
+              <label className="block text-xs font-bold text-white mb-2 uppercase tracking-widest">Priority</label>
+              <select 
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as TodoPriority)}
+                className="block w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-violet-500/50"
+              >
+                <option value={TodoPriority.LOW} className="bg-slate-900">Low</option>
+                <option value={TodoPriority.MEDIUM} className="bg-slate-900">Medium</option>
+                <option value={TodoPriority.HIGH} className="bg-slate-900">High</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-white mb-2 uppercase tracking-widest">Recurrence</label>
+              <select 
+                value={recurrence}
+                onChange={(e) => setRecurrence(e.target.value as TodoRecurrence)}
+                className="block w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-violet-500/50"
+              >
+                <option value={TodoRecurrence.NONE} className="bg-slate-900">None</option>
+                <option value={TodoRecurrence.DAILY} className="bg-slate-900">Daily</option>
+                <option value={TodoRecurrence.WEEKLY} className="bg-slate-900">Weekly</option>
+                <option value={TodoRecurrence.MONTHLY} className="bg-slate-900">Monthly</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5 relative z-10">
+            <div>
+              <label className="block text-xs font-bold text-white mb-2 uppercase tracking-widest">Due Date</label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="block w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-violet-500/50"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-white mb-2 uppercase tracking-widest">Tags (Press Enter)</label>
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleAddTag}
+                placeholder="Add tag..."
+                className="block w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-violet-500/50"
+              />
+              <div className="flex flex-wrap gap-2 mt-2">
+                {tags.map(tag => (
+                  <span key={tag} className="flex items-center text-[10px] font-bold text-violet-300 bg-violet-500/10 px-2 py-1 rounded-md border border-violet-500/20">
+                    #{tag}
+                    <button type="button" onClick={() => removeTag(tag)} className="ml-1 hover:text-white">×</button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className="mb-8 relative z-10">
             <label htmlFor="edit-description" className="block text-xs font-bold text-white mb-2 uppercase tracking-widest">Description (Optional)</label>
             <textarea

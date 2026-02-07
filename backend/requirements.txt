@@ -18,3 +18,4 @@ typing-inspect
 openai-agents
 mcp
 nest_asyncio
+python-dateutil

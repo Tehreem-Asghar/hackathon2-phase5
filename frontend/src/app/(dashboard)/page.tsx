@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
-import { Todo, TodoItem } from '@/components/todo/TodoItem';
+import { Todo, TodoPriority } from '@/types/todo';
+import { TodoItem } from '@/components/todo/TodoItem';
 import { AddTodoForm } from '@/components/forms/AddTodoForm';
 import { EditTodoForm } from '@/components/forms/EditTodoForm';
 import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal';
@@ -19,16 +20,26 @@ export default function DashboardPage() {
   const [todoToDelete, setTodoToDelete] = useState<string | null>(null);
   const [showChat, setShowChat] = useState(false);
 
+  // Filter States
+  const [search, setSearch] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState<string>('');
+  const [tagFilter, setTagFilter] = useState('');
+
   useEffect(() => {
     if (user) {
       fetchTodos();
     }
-  }, [user]);
+  }, [user, search, priorityFilter, tagFilter]);
 
   const fetchTodos = async () => {
     setIsLoadingTodos(true);
     try {
-      const res = await api.fetch('/api/todos');
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      if (priorityFilter) params.append('priority', priorityFilter);
+      if (tagFilter) params.append('tag', tagFilter);
+
+      const res = await api.fetch(`/api/todos?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setTodos(data);
@@ -155,6 +166,36 @@ export default function DashboardPage() {
                 <span className="mr-2 text-lg leading-none">{showAddForm ? '✕' : '+'}</span>
                 {showAddForm ? 'Close' : 'New Task'}
             </button>
+          </div>
+
+          {/* Search & Filters */}
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search tasks..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-violet-500/50"
+              />
+            </div>
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-violet-500/50"
+            >
+              <option value="" className="bg-slate-900">All Priorities</option>
+              <option value={TodoPriority.LOW} className="bg-slate-900">Low Priority</option>
+              <option value={TodoPriority.MEDIUM} className="bg-slate-900">Medium Priority</option>
+              <option value={TodoPriority.HIGH} className="bg-slate-900">High Priority</option>
+            </select>
+            <input
+              type="text"
+              placeholder="Filter by tag..."
+              value={tagFilter}
+              onChange={(e) => setTagFilter(e.target.value)}
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-violet-500/50"
+            />
           </div>
         </header>
 

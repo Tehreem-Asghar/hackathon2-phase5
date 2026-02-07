@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '@/lib/api';
+import { TodoPriority, TodoRecurrence } from '@/types/todo';
 
 interface AddTodoFormProps {
   onSuccess: () => void;
@@ -9,8 +10,27 @@ interface AddTodoFormProps {
 export const AddTodoForm: React.FC<AddTodoFormProps> = ({ onSuccess, onCancel }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState<TodoPriority>(TodoPriority.MEDIUM);
+  const [recurrence, setRecurrence] = useState<TodoRecurrence>(TodoRecurrence.NONE);
+  const [dueDate, setDueDate] = useState('');
+  const [tagInput, setTagInput] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const handleAddTag = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault();
+      if (!tags.includes(tagInput.trim())) {
+        setTags([...tags, tagInput.trim()]);
+      }
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(t => t !== tagToRemove));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +42,14 @@ export const AddTodoForm: React.FC<AddTodoFormProps> = ({ onSuccess, onCancel })
     try {
       const res = await api.fetch('/api/todos', {
         method: 'POST',
-        body: JSON.stringify({ title, description }),
+        body: JSON.stringify({ 
+          title, 
+          description,
+          priority,
+          recurrence,
+          due_date: dueDate ? new Date(dueDate).toISOString() : null,
+          tags
+        }),
       });
 
       if (res.ok) {
@@ -61,6 +88,65 @@ export const AddTodoForm: React.FC<AddTodoFormProps> = ({ onSuccess, onCancel })
           autoFocus
           placeholder="What needs to be done?"
         />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5 relative z-10">
+        <div>
+          <label className="block text-xs font-bold text-white mb-2 uppercase tracking-widest">Priority</label>
+          <select 
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as TodoPriority)}
+            className="block w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-violet-500/50"
+          >
+            <option value={TodoPriority.LOW} className="bg-slate-900">Low</option>
+            <option value={TodoPriority.MEDIUM} className="bg-slate-900">Medium</option>
+            <option value={TodoPriority.HIGH} className="bg-slate-900">High</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-white mb-2 uppercase tracking-widest">Recurrence</label>
+          <select 
+            value={recurrence}
+            onChange={(e) => setRecurrence(e.target.value as TodoRecurrence)}
+            className="block w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-violet-500/50"
+          >
+            <option value={TodoRecurrence.NONE} className="bg-slate-900">None</option>
+            <option value={TodoRecurrence.DAILY} className="bg-slate-900">Daily</option>
+            <option value={TodoRecurrence.WEEKLY} className="bg-slate-900">Weekly</option>
+            <option value={TodoRecurrence.MONTHLY} className="bg-slate-900">Monthly</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5 relative z-10">
+        <div>
+          <label className="block text-xs font-bold text-white mb-2 uppercase tracking-widest">Due Date</label>
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="block w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-violet-500/50"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-white mb-2 uppercase tracking-widest">Tags (Press Enter)</label>
+          <input
+            type="text"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={handleAddTag}
+            placeholder="Add tag..."
+            className="block w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-violet-500/50"
+          />
+          <div className="flex flex-wrap gap-2 mt-2">
+            {tags.map(tag => (
+              <span key={tag} className="flex items-center text-[10px] font-bold text-violet-300 bg-violet-500/10 px-2 py-1 rounded-md border border-violet-500/20">
+                #{tag}
+                <button type="button" onClick={() => removeTag(tag)} className="ml-1 hover:text-white">×</button>
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
       
       <div className="mb-8 relative z-10">

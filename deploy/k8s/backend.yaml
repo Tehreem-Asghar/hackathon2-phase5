@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-backend
+  labels:
+    app: todo-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-backend
+  template:
+    metadata:
+      labels:
+        app: todo-backend
+    spec:
+      containers:
+        - name: backend
+          image: todo-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secrets
+                  key: databaseUrl
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secrets
+                  key: secretKey
+            - name: ALGORITHM
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secrets
+                  key: algorithm
+            - name: ACCESS_TOKEN_EXPIRE_MINUTES
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secrets
+                  key: accessTokenExpireMinutes
+            - name: BACKEND_CORS_ORIGINS
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secrets
+                  key: backendCorsOrigins
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secrets
+                  key: geminiApiKey
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-backend
+spec:
+  type: LoadBalancer
+  selector:
+    app: todo-backend
+  ports:
+    - port: 8000
+      targetPort: 8000

@@ -2,94 +2,54 @@
 
 **Branch**: `004-phase-v` | **Spec**: [specs/004-advanced-cloud-deployment/spec.md](specs/004-advanced-cloud-deployment/spec.md) | **Plan**: [specs/004-advanced-cloud-deployment/plan.md](specs/004-advanced-cloud-deployment/plan.md)
 
-## Infrastructure Tasks (Local & Cloud)
+## Phase 1: Direct Feature Implementation (No Kafka/Dapr)
 
-- [ ] **INF-001**: Install and Initialize Dapr on Minikube
-  - **Description**: Install Dapr CLI and initialize Dapr in the local Kubernetes cluster.
-  - **Preconditions**: Minikube running.
-  - **Outcome**: `dapr status -k` shows all control plane services running.
-  - **Artifacts**: Minikube cluster state.
+- [X] **FEAT-101**: Update Todo Model & Schemas
+  - **Description**: Add `priority`, `tags`, `due_date`, `recurrence`, and `parent_id` to Backend models and Pydantic schemas.
+  - **Artifacts**: `backend/app/models/todo.py`, `backend/app/schemas/todo.py`.
 
-- [ ] **INF-002**: Deploy Redpanda (Kafka) on Minikube
-  - **Description**: Deploy Redpanda using Helm charts to act as the message broker.
-  - **Preconditions**: INF-001.
-  - **Outcome**: Redpanda cluster running in `kafka` namespace.
-  - **Artifacts**: Helm release `redpanda`.
+- [X] **FEAT-102**: Implement Search, Filter, and Sort in Backend
+  - **Description**: Update `read_todos` endpoint to support query parameters for searching titles, filtering by priority/tags, and sorting by due date or creation date.
+  - **Artifacts**: `backend/app/api/routes/todos.py`.
 
-- [ ] **INF-003**: Configure Dapr Components (Local)
-  - **Description**: Create YAML files for Dapr components: `pubsub.kafka`, `statestore.postgresql`, and `secretstores.kubernetes`.
-  - **Preconditions**: INF-002.
-  - **Outcome**: Dapr can communicate with Kafka and Postgres.
-  - **Artifacts**: `deploy/dapr/pubsub.yaml`, `deploy/dapr/statestore.yaml`.
+- [X] **FEAT-103**: Implement Recurring Task Logic (Direct)
+  - **Description**: Add logic to `complete_todo` to automatically create the next instance if the task is recurring.
+  - **Artifacts**: `backend/app/api/routes/todos.py`.
 
-- [ ] **INF-004**: Provision GKE Cluster
-  - **Description**: Create a Kubernetes cluster on Google Cloud Platform.
-  - **Preconditions**: GCP account with credits.
-  - **Outcome**: Functional GKE cluster accessible via `kubectl`.
-  - **Artifacts**: GCP Console/CLI output.
+- [X] **FEAT-104**: Implement Due Dates & Basic Reminders
+  - **Description**: Add validation for due dates. (Frontend will handle display of overdue tasks).
+  - **Artifacts**: `backend/app/api/routes/todos.py`.
 
-## Service Refactoring Tasks (Dapr-ization)
+- [X] **FEAT-105**: Update Frontend UI for Intermediate/Advanced Features
+  - **Description**: Add fields to Task Creation/Edit forms for priority, tags, due date, and recurrence. Add search bar and filter/sort UI.
+  - **Artifacts**: `frontend/src/app/todos/page.tsx`, `frontend/src/components/*.tsx`.
 
-- [ ] **SRV-001**: Refactor Backend to use Dapr State Store
-  - **Description**: Replace direct Neon/SQLModel session calls with Dapr State Store HTTP/gRPC calls for task state.
-  - **Preconditions**: INF-003.
-  - **Outcome**: Backend state is managed via Dapr abstraction.
-  - **Artifacts**: `backend/app/db/dapr_state.py`.
+## Phase 2: Containerization & Local Kubernetes
 
-- [ ] **SRV-002**: Implement Event Publication in Backend
-  - **Description**: Emit `task-events` (created, updated, completed, deleted) to Dapr Pub/Sub.
-  - **Preconditions**: SRV-001.
-  - **Outcome**: Actions in the UI trigger Kafka messages.
-  - **Artifacts**: `backend/app/api/routes/todos.py` (updated).
+- [X] **OPS-201**: Dockerize Frontend and Backend
+  - **Description**: Create/Verify Dockerfiles and `docker-compose.yaml` for local container testing.
+  - **Artifacts**: `backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose.yaml`.
 
-- [ ] **SRV-003**: Inject Dapr Sidecars into Deployments
-  - **Description**: Update Kubernetes deployment manifests to include Dapr annotations (`dapr.io/enabled: "true"`).
-  - **Preconditions**: INF-001.
-  - **Outcome**: Each pod has a `daprd` sidecar.
-  - **Artifacts**: `charts/todo-app/templates/deployment.yaml`.
+- [X] **OPS-202**: Local Kubernetes Deployment (Docker Desktop)
+  - **Description**: Create Kubernetes manifests (Deployment, Service) and deploy to the local cluster.
+  - **Artifacts**: `deploy/k8s/backend.yaml`, `deploy/k8s/frontend.yaml`.
 
-## Advanced Features Tasks (New Services)
+## Phase 3: Cloud Deployment (GKE)
 
-- [ ] **FEAT-001**: Implement Recurring Task Service
-  - **Description**: Create a new Python service that subscribes to `task-events`, filters for `completed` recurring tasks, and creates the next occurrence.
-  - **Preconditions**: SRV-002.
-  - **Outcome**: Completing a "Daily" task creates a new one for tomorrow.
-  - **Artifacts**: `services/recurring/main.py`, `services/recurring/Dockerfile`.
+- [/] **OPS-301**: Provision GKE Cluster
+  - **Description**: Create cluster on Google Cloud.
+  - **Artifacts**: GKE Cluster.
 
-- [ ] **FEAT-002**: Implement Notification Service & Reminders
-  - **Description**: Integrate Dapr Jobs API to schedule reminders. Implement a service to handle callbacks and "notify" users.
-  - **Preconditions**: SRV-002.
-  - **Outcome**: Users receive reminders at the specified time.
-  - **Artifacts**: `services/notification/main.py`.
-
-- [ ] **FEAT-003**: Implement Audit Log Service
-  - **Description**: Create a consumer service that stores every task event into an `audit_logs` table for history tracking.
-  - **Preconditions**: SRV-002.
-  - **Outcome**: Persistent history of all task changes.
-  - **Artifacts**: `services/audit/main.py`.
-
-- [ ] **FEAT-004**: Real-time Sync via WebSockets
-  - **Description**: Use Dapr Pub/Sub to broadcast task updates to a WebSocket server that notifies the frontend.
-  - **Preconditions**: SRV-002.
-  - **Outcome**: Multi-client UI updates without refresh.
-  - **Artifacts**: `services/sync/main.py` (or integrated into backend).
-
-## CI/CD & Cloud Tasks
-
-- [ ] **CI-001**: Dockerize New Services
-  - **Description**: Create Dockerfiles for all new microservices (Audit, Recurring, Notification).
-  - **Preconditions**: FEAT-001, FEAT-002, FEAT-003.
-  - **Outcome**: Images can be built and pushed to registry.
-  - **Artifacts**: `services/*/Dockerfile`.
-
-- [ ] **CI-002**: Setup GitHub Actions for Cloud Deployment
-  - **Description**: Create a workflow that builds images, pushes to GCP Artifact Registry, and deploys to GKE using Helm.
-  - **Preconditions**: INF-004, CI-001.
-  - **Outcome**: Automatic deployment on `git push`.
+- [ ] **OPS-302**: Setup CI/CD with GitHub Actions
+  - **Description**: Automate build, push to Artifact Registry, and deploy to GKE.
   - **Artifacts**: `.github/workflows/deploy-gke.yaml`.
 
-- [ ] **MON-001**: Configure Monitoring & Logging
-  - **Description**: Set up Dapr observability with Prometheus and Grafana on the cluster. Enable GKE Cloud Logging.
-  - **Preconditions**: INF-004.
-  - **Outcome**: Visual dashboards for system health and logs.
-  - **Artifacts**: `deploy/monitoring/grafana-dashboard.json`.
+## Phase 4: Event-Driven Refactor (Kafka & Dapr)
+
+- [ ] **ARCH-401**: Initialize Dapr & Redpanda
+  - **Description**: Deploy Dapr and Redpanda components to the cluster.
+  - **Artifacts**: Dapr components YAML.
+
+- [ ] **ARCH-402**: Refactor to Event-Driven Architecture
+  - **Description**: Transition direct logic (Recurrence, Audit, Notifications) to use Dapr Pub/Sub and Kafka events.
+  - **Artifacts**: New microservices in `services/`.
