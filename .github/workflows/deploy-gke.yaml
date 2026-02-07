@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-
+      
 env:
   PROJECT_ID: my-gemini-backend-484109
   GKE_CLUSTER: todo-cluster
@@ -63,12 +63,18 @@ jobs:
 
     - name: Deploy
       run: |-
-        # Update image names in manifests - using a regex that finds 'image: todo-backend' and replaces the whole line
+        # Update image names in manifests
         sed -i "s|image: todo-backend.*|image: us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_BACKEND:$GITHUB_SHA|g" deploy/k8s/backend.yaml
         sed -i "s|image: todo-frontend.*|image: us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_FRONTEND:$GITHUB_SHA|g" deploy/k8s/frontend.yaml
         
+        # Inject secrets into secrets.yaml using envsubst
+        export DATABASE_URL="${{ secrets.DATABASE_URL }}"
+        export SECRET_KEY="${{ secrets.SECRET_KEY }}"
+        export GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
+        envsubst < deploy/k8s/secrets.yaml > deploy/k8s/secrets_final.yaml
+        
         # Apply manifests
-        kubectl apply -f deploy/k8s/secrets.yaml
+        kubectl apply -f deploy/k8s/secrets_final.yaml
         kubectl apply -f deploy/k8s/backend.yaml
         kubectl apply -f deploy/k8s/frontend.yaml
         kubectl rollout status deployment/todo-backend
