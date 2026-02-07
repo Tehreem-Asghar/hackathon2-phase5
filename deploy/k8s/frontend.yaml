@@ -22,7 +22,7 @@ spec:
             - containerPort: 3000
           env:
             - name: NEXT_PUBLIC_API_URL
-              value: "http://todo-backend:8000"
+              value: "http://34.31.155.250:8000"
           resources:
             limits:
               cpu: "500m"

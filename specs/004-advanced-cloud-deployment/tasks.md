@@ -36,11 +36,11 @@
 
 ## Phase 3: Cloud Deployment (GKE)
 
-- [/] **OPS-301**: Provision GKE Cluster
+- [X] **OPS-301**: Provision GKE Cluster
   - **Description**: Create cluster on Google Cloud.
   - **Artifacts**: GKE Cluster.
 
-- [ ] **OPS-302**: Setup CI/CD with GitHub Actions
+- [X] **OPS-302**: Setup CI/CD with GitHub Actions
   - **Description**: Automate build, push to Artifact Registry, and deploy to GKE.
   - **Artifacts**: `.github/workflows/deploy-gke.yaml`.
 
