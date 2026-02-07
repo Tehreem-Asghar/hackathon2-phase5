@@ -63,9 +63,9 @@ jobs:
 
     - name: Deploy
       run: |-
-        # Update image names in manifests
-        sed -i "s|image: todo-backend:latest|image: us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_BACKEND:$GITHUB_SHA|g" deploy/k8s/backend.yaml
-        sed -i "s|image: todo-frontend:latest|image: us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_FRONTEND:$GITHUB_SHA|g" deploy/k8s/frontend.yaml
+        # Update image names in manifests - using a regex that finds 'image: todo-backend' and replaces the whole line
+        sed -i "s|image: todo-backend.*|image: us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_BACKEND:$GITHUB_SHA|g" deploy/k8s/backend.yaml
+        sed -i "s|image: todo-frontend.*|image: us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_FRONTEND:$GITHUB_SHA|g" deploy/k8s/frontend.yaml
         
         # Apply manifests
         kubectl apply -f deploy/k8s/secrets.yaml
