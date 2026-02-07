@@ -19,6 +19,7 @@ app = FastAPI(title=settings.PROJECT_NAME)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://hackathon2-phase5-ac5i.vercel.app",
         "http://localhost:30000",
         "http://localhost:30001",
         "http://localhost:3000",
